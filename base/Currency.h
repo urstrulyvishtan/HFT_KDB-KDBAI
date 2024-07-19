@@ -6,14 +6,14 @@
 #include "enum_txt.h"
 
 #define CURRENCY_ID_ENUM(declare)\
-        declare(CURRENCY_UNKNOWN, "UNKNOWN")\
-        declare(CURRENCY_CNY, "CNY")\
-        declare(CURRENCY_USD, "USD")\
-        declare(CURRENCY_HKD, "HKD")\
-        declare(CURRENCY_JPY, "JPY")\
-        declare(CURRENCY_EUR, "EUR")\
-        declare(CURRENCY_GBP, "GBP")
-        declare(CURRENCY_INR, "INR")
+        declare(CURRENCY_UNKNOWN, "UNKNOWN", "UNKNOWN")\
+        declare(CURRENCY_CNY, "CNY", "RMB")\
+        declare(CURRENCY_USD, "USD", "Dollar")\
+        declare(CURRENCY_HKD, "HKD", "Hong Kong Dollar")\
+        declare(CURRENCY_JPY, "JPY", "Japanese Yen")\
+        declare(CURRENCY_EUR, "EUR", "Euro")\
+        declare(CURRENCY_GBP, "GBP", "Pound Streling")
+        declare(CURRENCY_INR, "INR", "Indian Rupees")
 
 enum CurrencyId {CURRENCY_ID_ENUM (SELECT_1_AND_COMMA_IN_3) CURRENCY_MAX};
 
