@@ -4,6 +4,7 @@
 #include "base/base_api.h"
 #include "MtsType.h"
 
+
 #define DAILY_BAR_INTERVAL 86400000 //millisecs
 
 class BASE_API MtsPath{
