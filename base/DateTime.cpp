@@ -307,3 +307,173 @@ QString DateTime::toLocalString(QChar dateTimeSep/*=Qchar(' ')*/) const{
         .arg(second(), 2, 10, QChar('0'))
         .arg(millisecond(), 3, 10, QChar('0'));
 }
+
+QString DateTime::toString(QChar dateTimeSep) const{
+    if(isNull()){
+        return QString::number(Nan);
+    }
+    return QString("%1%2%3")
+                    .arg(toLocalString())
+                    .arg(dateTimeSep)
+                    .arg(timezoneSessionName(this->countryCode()));
+}
+
+int DateTime::time() const{
+    if(isNull()){
+        return Nan;
+    }
+    return (hour()*1000+minute()*100+seconds())*1000+millisecond();
+}
+
+int DateTime::time() const{
+    if(isNull()){
+        return Nan;
+    }
+    return (hour()*1000+minute()*1000+second())*1000+millisecond();
+}
+
+void DateTime::setTime(int tm){
+    this->resetTicksSinceMidnight(DateTime::time2LocalTicksFromMidnight(tm));
+#ifndef NDEBUG
+    _time = time();
+#endif
+}
+
+int DateTime::ticksSinceMidnight() const{
+    if(isNull()){
+        return Nan;
+    }
+    return _localTicks.refreshAndGet(_utcTicks)%TICS_PER_DAY;
+}
+
+TimezoneCode DateTime::countryCode() const{
+    return _localTicks.timezone();
+}
+
+const DateTime DateTime::Null;
+
+int DateTime::hoursTo(const DateTime& other) const{
+    if(isNull()){
+        return Nan;
+    }
+    return this->millisecondsTo(other)/TICS_PER_HOUR;
+}
+
+int DateTime::secondsTo(const DateTime& other, bool plusADayIfnegative) const{
+    if(isNull()){
+        return Nan;
+    }
+    qint64 td = other - *this;
+    if(plusADayIfnegative && td<0){
+        td+=TICS_PER_DAY;
+    }
+    return (int)(td/TICS_PER_SECOND);
+}
+
+qint64 DateTime::millisecondsTo(const DateTime& other) const{
+    if(isNull()){
+        return Nan;
+    }
+    if(this->countryCode() == other.countryCode()){
+        if(!_localTicks.isNull() && !other._localTicks.isNull()){
+            return other._localTicks-_localTicks;
+        }else if(!_utcTicks.isNull()&&!other._utcTicks.isNull()){
+            return other._utcTicks-_utcTicks;
+        }
+    }
+    return other.toUTCMillisecsSinceEpoch() - this->toUTCMillisecsSinceEpoch();
+}
+
+void DateTime::addMilliseconds(qint64 millisec){
+    if(isNull()){
+        return ;
+    }
+    if(!_localTicks.isNull()){
+        _localTicks.add(milliseconds);
+    }
+    if(!_utcTicks.isNull()){
+        _utcTicks.add(milliseconds);
+    }
+#ifndef NEDUBG
+        _date = date();
+        _time = time();
+#endif
+}
+
+bool DateTime::operator==(const DateTime& other) const{
+    if(this->countryCode() == other.countryCode()){
+        if(!_localTicks.isNull() && !other._localTicks.isNull()){
+            return _localTicks == other._localTicks;
+        }else if(!_utcTicks.isNull()&&!other._utcTicks.isNull()){
+            return _utcTicks == other._utcTicks;
+        }
+    }
+    return this->toUTCMillisecsSinceEpoch() == other.toUTCMillisecsSinceEpoch();
+}
+
+bool DateTime::operator!=(const DateTime& other) const{
+    return !(this->operator == (other));
+}
+
+bool DateTime::operator>(const DateTime& other) const{
+    if(this->countryCode() == other.countryCode()){
+        if(!_localTicks.isNull() && !other._localTicks.isNull()){
+            return _localTicks>other._localTicks;
+        }else if(!_utcTicks.isNull() && !other._utcTicks.isNull()){
+            return _utcTicks>other._utcTicks;
+        }
+    }
+    return this->toUTCMillisecsSinceEpoch() > other.toUTCMillisecsSinceEpoch();
+}
+
+bool DateTime::operator>=(const DateTime& other) const{
+    return operator>(other) || operator==(other);
+}
+
+bool DateTime::operator<(const DateTime& other) const{
+    return !operator>=(other);
+}
+
+bool DateTime::operator<=(const DateTime& other) const{
+    return !operator>(other);
+}
+
+DateTime DateTime::toNextDays(int days) const{
+    return this->operator+(days*TICS_PER_DAY);
+}
+
+bool DateTime::initTimezoneDatabase(){
+    return Ticks::initTimezoneDatabase();
+}
+
+qint64 DateTime::operator-(const DateTime& other) const{
+    return other.millisecondsTo(*this);
+}
+
+DateTime DateTime::operator-(qint64 ticks) const{
+    return this->operator+(-ticks);
+}
+
+DateTime DateTime::operator+(qint64 ticks) const{
+    if(isNull()){
+        return DateTime::Null;
+    }
+    DateTime ts = DateTime(*this);
+    ts.addMilliseconds(ticks);
+    return ts;
+}
+
+void DateTime::clear(){
+    _utcTicks.clear();
+    _localTicks.clear();
+    _localTicks.clearTimezone();
+    assert(isNull());
+#ifndef NDEBUG
+    _date = INVALID_DATE;
+    _time = 0;
+#endif
+}
+
+bool DateTime::isNull() const{
+    return _localTicks.isNull() && _utcTicks.isNull();
+}
